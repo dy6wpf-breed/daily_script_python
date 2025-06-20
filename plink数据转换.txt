@@ -1,0 +1,45 @@
+#首先，你需要将.ped和.map文件转换为plink的二进制格式文件（.bed、.bim、.fam）
+plink --file plink --make-bed --out plink_file
+
+#这里：your_input_file 是不带扩展名的.ped和.map文件的公共前缀。output_file 是你想要生成的二进制文件的前缀。
+plink --bfile plink_file --pca 3 --out plink_file_output
+
+#接下来，你可以使用以下命令进行PCA分析：
+plink --bfile 1000Samples_file --pca 3 --out pca_output  --chr-set 29（山羊染色体）
+#生成的PCA结果通常保存在一个名为pca_output.eigenvec的文件中。这个文件中包含每个样本的FID、IID和每个主成分的值。
+
+文件格式类似于以下内容：
+FID    IID    PC1         PC2         PC3
+0      ID1    -0.01234    0.02345    -0.03456
+0      ID2    0.06789    -0.01234    0.04567
+...
+#使用Python读取eigenvec文件并进行可视化。以下是如何用pandas和matplotlib实现三维PCA图的代码：
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# 读取eigenvec文件
+eigenvec_path = "pca_output.eigenvec"
+df = pd.read_csv(eigenvec_path, delim_whitespace=True, header=None)
+
+# 假设文件中有 "FID", "IID", "PC1", "PC2", "PC3" 这些列
+df.columns = ['FID', 'IID', 'PC1', 'PC2', 'PC3']
+
+# 创建一个3D图形
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# 绘制散点图
+ax.scatter(df['PC1'], df['PC2'], df['PC3'])
+
+# 添加轴标签
+ax.set_xlabel('PC1')
+ax.set_ylabel('PC2')
+ax.set_zlabel('PC3')
+
+# 添加点的IID标签
+for i, iid in enumerate(df['IID']):
+    ax.text(df['PC1'][i], df['PC2'][i], df['PC3'][i], iid, fontsize=9)
+
+# 显示图形
+plt.show()
